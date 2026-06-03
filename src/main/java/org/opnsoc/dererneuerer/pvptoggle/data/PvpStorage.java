@@ -25,8 +25,6 @@ public class PvpStorage {
     }
 
     public static boolean activateExpiredPending(MinecraftServer server) {
-        load(server);
-
         if (!data.activateExpiredPending()) {
             return false;
         }
