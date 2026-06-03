@@ -2,15 +2,18 @@ package org.opnsoc.dererneuerer.pvptoggle.data;
 
 import java.util.*;
 
+// ... existing code ...
 public class PvpData {
     public Set<UUID> pvpOff = new HashSet<>();
     public Map<UUID, Long> pendingOffUntil = new HashMap<>();
     public Map<UUID, Set<UUID>> blockedPlayers = new HashMap<>();
+    public Map<UUID, Map<UUID, Long>> pendingBlockedPlayers = new HashMap<>();
 
     public void fixNulls() {
         if (pvpOff == null) pvpOff = new HashSet<>();
         if (pendingOffUntil == null) pendingOffUntil = new HashMap<>();
         if (blockedPlayers == null) blockedPlayers = new HashMap<>();
+        if (pendingBlockedPlayers == null) pendingBlockedPlayers = new HashMap<>();
     }
 
     public boolean isPvpOff(UUID playerId) {
@@ -48,7 +51,35 @@ public class PvpData {
     }
 
     public void block(UUID owner, UUID target) {
+        cancelPendingBlock(owner, target);
         blockedPlayers.computeIfAbsent(owner, id -> new HashSet<>()).add(target);
+    }
+
+    public void blockDelayed(UUID owner, UUID target, long activateAtMillis) {
+        Set<UUID> blocked = blockedPlayers.get(owner);
+
+        if (blocked != null) {
+            blocked.remove(target);
+            if (blocked.isEmpty()) {
+                blockedPlayers.remove(owner);
+            }
+        }
+
+        pendingBlockedPlayers
+                .computeIfAbsent(owner, id -> new HashMap<>())
+                .put(target, activateAtMillis);
+    }
+
+    public void cancelPendingBlock(UUID owner, UUID target) {
+        Map<UUID, Long> pending = pendingBlockedPlayers.get(owner);
+
+        if (pending != null) {
+            pending.remove(target);
+
+            if (pending.isEmpty()) {
+                pendingBlockedPlayers.remove(owner);
+            }
+        }
     }
 
     public void unblock(UUID owner, UUID target) {
@@ -57,27 +88,75 @@ public class PvpData {
             set.remove(target);
             if (set.isEmpty()) blockedPlayers.remove(owner);
         }
+
+        cancelPendingBlock(owner, target);
     }
 
     public boolean hasBlocked(UUID owner, UUID target) {
+        activateExpiredPending();
         return blockedPlayers.getOrDefault(owner, Set.of()).contains(target);
+    }
+
+    public boolean hasPendingBlock(UUID owner, UUID target) {
+        activateExpiredPending();
+        return pendingBlockedPlayers
+                .getOrDefault(owner, Map.of())
+                .containsKey(target);
+    }
+
+    public long pendingBlockUntil(UUID owner, UUID target) {
+        activateExpiredPending();
+        return pendingBlockedPlayers
+                .getOrDefault(owner, Map.of())
+                .getOrDefault(target, 0L);
     }
 
     public int blockedCount(UUID owner) {
         return blockedPlayers.getOrDefault(owner, Set.of()).size();
     }
 
+    public int pendingBlockedCount(UUID owner) {
+        return pendingBlockedPlayers.getOrDefault(owner, Map.of()).size();
+    }
+
     public boolean activateExpiredPending() {
         boolean changed = false;
         long now = System.currentTimeMillis();
-        Iterator<Map.Entry<UUID, Long>> iterator = pendingOffUntil.entrySet().iterator();
+        Iterator<Map.Entry<UUID, Long>> pvpOffIterator = pendingOffUntil.entrySet().iterator();
 
-        while (iterator.hasNext()) {
-            Map.Entry<UUID, Long> entry = iterator.next();
+        while (pvpOffIterator.hasNext()) {
+            Map.Entry<UUID, Long> entry = pvpOffIterator.next();
             if (entry.getValue() <= now) {
                 pvpOff.add(entry.getKey());
-                iterator.remove();
+                pvpOffIterator.remove();
                 changed = true;
+            }
+        }
+
+        Iterator<Map.Entry<UUID, Map<UUID, Long>>> ownerIterator = pendingBlockedPlayers.entrySet().iterator();
+
+        while (ownerIterator.hasNext()) {
+            Map.Entry<UUID, Map<UUID, Long>> ownerEntry = ownerIterator.next();
+            UUID owner = ownerEntry.getKey();
+            Map<UUID, Long> pendingTargets = ownerEntry.getValue();
+
+            Iterator<Map.Entry<UUID, Long>> targetIterator = pendingTargets.entrySet().iterator();
+
+            while (targetIterator.hasNext()) {
+                Map.Entry<UUID, Long> targetEntry = targetIterator.next();
+
+                if (targetEntry.getValue() <= now) {
+                    blockedPlayers
+                            .computeIfAbsent(owner, id -> new HashSet<>())
+                            .add(targetEntry.getKey());
+
+                    targetIterator.remove();
+                    changed = true;
+                }
+            }
+
+            if (pendingTargets.isEmpty()) {
+                ownerIterator.remove();
             }
         }
 

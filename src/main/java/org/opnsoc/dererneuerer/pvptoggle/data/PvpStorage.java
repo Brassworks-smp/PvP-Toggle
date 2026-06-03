@@ -24,6 +24,17 @@ public class PvpStorage {
         return data;
     }
 
+    public static boolean activateExpiredPending(MinecraftServer server) {
+        load(server);
+
+        if (!data.activateExpiredPending()) {
+            return false;
+        }
+
+        save(server);
+        return true;
+    }
+
     public static void load(MinecraftServer server) {
         Path path = file(server);
 

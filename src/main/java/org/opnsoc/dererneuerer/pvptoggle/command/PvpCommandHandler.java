@@ -73,14 +73,33 @@ public class PvpCommandHandler {
 
                                             PvpData data = PvpStorage.get(self.server);
 
-                                            data.block(self.getUUID(), other.getUUID());
-                                            PvpStorage.save(self.server);
-                                            PvpIconSync.syncAll(self);
+                                            int minutes = Config.takeEffectTimeMinutes;
 
-                                            PvpUtil.tellError(self,
-                                                    "PvP between you and §f"
-                                                            + other.getName().getString()
-                                                            + " §7has been §cblocked§7.");
+                                            if (minutes <= 0) {
+                                                data.block(self.getUUID(), other.getUUID());
+                                                PvpStorage.save(self.server);
+                                                PvpIconSync.syncAll(self);
+
+                                                PvpUtil.tellError(self,
+                                                        "PvP between you and §f"
+                                                                + other.getName().getString()
+                                                                + " §7has been §cblocked§7.");
+                                            } else {
+                                                long until = System.currentTimeMillis() + minutes * 60_000L;
+
+                                                data.blockDelayed(self.getUUID(), other.getUUID(), until);
+                                                PvpStorage.save(self.server);
+                                                PvpIconSync.syncAll(self);
+
+                                                PvpUtil.tellWarning(self,
+                                                        "PvP between you and §f"
+                                                                + other.getName().getString()
+                                                                + " §7will be blocked in §f"
+                                                                + minutes
+                                                                + " minute"
+                                                                + (minutes == 1 ? "" : "s")
+                                                                + "§7.");
+                                            }
 
                                             return 1;
                                         })))
@@ -110,19 +129,22 @@ public class PvpCommandHandler {
                             PvpData data = PvpStorage.get(player.server);
 
                             UUID id = player.getUUID();
+                            String blockInfo = "§8 | §7Blocked players: §f"
+                                    + data.blockedCount(id)
+                                    + " §8| §7Pending blocks: §f"
+                                    + data.pendingBlockedCount(id);
 
                             if (data.isPvpOff(id)) {
                                 PvpUtil.tellInfo(player,
-                                        "Status: §cPvP OFF §8| §7Blocked players: §f"
-                                                + data.blockedCount(id));
+                                        "Status: §cPvP OFF" + blockInfo);
                             } else if (data.isPending(id)) {
                                 PvpUtil.tellWarning(player,
                                         "Status: §ePvP OFF pending §8| §7Active in: §f"
-                                                + PvpUtil.formatRemaining(data.pendingUntil(id)));
+                                                + PvpUtil.formatRemaining(data.pendingUntil(id))
+                                                + blockInfo);
                             } else {
                                 PvpUtil.tellSuccess(player,
-                                        "Status: §aPvP ON §8| §7Blocked players: §f"
-                                                + data.blockedCount(id));
+                                        "Status: §aPvP ON" + blockInfo);
                             }
 
                             return 1;
@@ -130,16 +152,16 @@ public class PvpCommandHandler {
 
                         .then(Commands.literal("help").executes(ctx -> {
                             ctx.getSource().sendSuccess(() -> Component.literal("""
-                                        §8§m                                                  §r
-                                        §8[§cPvP§8] §fCommands
-                                        §8§m                                                  §r
-                                        §c/pvp off §8- §7Disable PvP after the configured delay
-                                        §a/pvp on §8- §7Enable PvP
-                                        §c/pvp block <player> §8- §7Block PvP with a player
-                                        §a/pvp unblock <player> §8- §7Allow PvP with a player again
-                                        §b/pvp status §8- §7Show your current PvP status
-                                        §8§m                                                  §r
-                                        """), false);
+                                            §8§m                                                  §r
+                                            §8[§cPvP§8] §fCommands
+                                            §8§m                                                  §r
+                                            §c/pvp off §8- §7Disable PvP after the configured delay
+                                            §a/pvp on §8- §7Enable PvP
+                                            §c/pvp block <player> §8- §7Block PvP with a player after the configured delay
+                                            §a/pvp unblock <player> §8- §7Allow PvP with a player again
+                                            §b/pvp status §8- §7Show your current PvP status
+                                            §8§m                                                  §r
+                                            """), false);
 
                             return 1;
                         }))

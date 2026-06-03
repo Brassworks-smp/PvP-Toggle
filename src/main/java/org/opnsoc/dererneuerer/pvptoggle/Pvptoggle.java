@@ -13,6 +13,7 @@ import org.opnsoc.dererneuerer.pvptoggle.combat.PvpDamageHandler;
 import org.opnsoc.dererneuerer.pvptoggle.combat.PvpPlayerHandler;
 import org.opnsoc.dererneuerer.pvptoggle.command.PvpCommandHandler;
 import org.opnsoc.dererneuerer.pvptoggle.config.Config;
+import org.opnsoc.dererneuerer.pvptoggle.data.PvpPendingTickHandler;
 import org.opnsoc.dererneuerer.pvptoggle.network.PvpIconSync;
 import org.opnsoc.dererneuerer.pvptoggle.network.PvptoggleNetwork;
 import org.slf4j.Logger;
@@ -31,6 +32,7 @@ public class Pvptoggle {
         NeoForge.EVENT_BUS.register(new PvpDamageHandler());
         NeoForge.EVENT_BUS.register(new PvpPlayerHandler());
         NeoForge.EVENT_BUS.register(new PvpIconSync());
+        NeoForge.EVENT_BUS.register(new PvpPendingTickHandler());
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
             NeoForge.EVENT_BUS.register(PvpIconRenderer.class);
