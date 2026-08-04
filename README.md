@@ -94,8 +94,8 @@ Install PvP Toggle on the client to display nametag icons.
 
 To use the graphical management menu, additionally install:
 
-- BrassUI
-- A BrassUI-compatible KotlinForForge version
+- BrassUI (Automatically included in the Mod)
+- A compatible KotlinForForge version
 
 Clients without PvP Toggle or without the optional UI dependencies may still connect because the network channels are optional. Legacy clients using protocol version 1 retain icon support.
 
