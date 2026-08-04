@@ -44,7 +44,7 @@ jobs:
         with:
           version: ${{ inputs.version }}
           name: '[${{ inputs.version }}] Advanced PvP Toggle'
-          changelog-file: changelog.md
+          changelog-file: CHANGELOG.md
 
           loaders: neoforge
           game-versions: 1.21.1
