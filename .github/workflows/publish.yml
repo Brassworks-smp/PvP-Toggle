@@ -29,7 +29,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           cache-disabled: true
-          GH_PACKAGES_TOKEN
           
       - name: Make gradlew executable
         run: chmod +x gradlew
