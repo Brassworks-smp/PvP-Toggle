@@ -32,8 +32,8 @@ repositories {
         maven {
             url = 'https://maven.pkg.github.com/Brassworks-smp/BrassUi'
             credentials {
-                username = githubActor
-                password = githubToken
+                username = System.getenv("GITHUB_PACKAGES_USERNAME")
+                password = System.getenv("GITHUB_PACKAGES_TOKEN")
             }
             content { includeGroup 'net.swzo.brass' }
         }
