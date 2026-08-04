@@ -1,5 +1,25 @@
 {
-  "itemGroup.pvptoggle": "Example Mod Tab",
-  "block.pvptoggle.example_block": "Example Block",
-  "item.pvptoggle.example_item": "Example Item"
+  "screen.pvptoggle.title": "PvP Management",
+  "screen.pvptoggle.status": "Status",
+  "screen.pvptoggle.status_on": "PvP ON",
+  "screen.pvptoggle.status_off": "PvP OFF",
+  "screen.pvptoggle.status_pending": "PvP OFF pending",
+  "screen.pvptoggle.summary": "Blocked: %s · Pending: %s · Delay: %s min",
+  "screen.pvptoggle.enable": "Enable PvP",
+  "screen.pvptoggle.disable": "Disable PvP",
+  "screen.pvptoggle.refresh": "Refresh",
+  "screen.pvptoggle.players": "Online players",
+  "screen.pvptoggle.search": "Search players...",
+  "screen.pvptoggle.no_search_results": "No matching players.",
+  "screen.pvptoggle.no_players": "No other players are online.",
+  "screen.pvptoggle.allowed": "Allowed",
+  "screen.pvptoggle.protected": "Protected",
+  "screen.pvptoggle.blocked": "Blocked",
+  "screen.pvptoggle.pending": "Pending",
+  "screen.pvptoggle.block": "Block",
+  "screen.pvptoggle.unblock": "Unblock",
+  "screen.pvptoggle.cancel": "Cancel",
+  "screen.pvptoggle.close": "Close",
+  "message.pvptoggle.ui_unavailable": "The optional PvP menu requires KotlinForForge. All /pvp commands remain available.",
+  "message.pvptoggle.ui_failed": "The optional BrassUI PvP menu could not be opened. Check the client log."
 }

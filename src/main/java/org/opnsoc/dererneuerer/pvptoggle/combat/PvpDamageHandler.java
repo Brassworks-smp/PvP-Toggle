@@ -8,6 +8,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingKnockBackEvent;
 import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
 import org.opnsoc.dererneuerer.pvptoggle.data.PvpData;
 import org.opnsoc.dererneuerer.pvptoggle.data.PvpStorage;
@@ -21,7 +22,9 @@ import java.util.UUID;
 public class PvpDamageHandler {
 
     private static final Map<UUID, RecentAttack> RECENT_ATTACKERS = new HashMap<>();
+    private static final Map<UUID, Long> LAST_BLOCK_MESSAGE = new HashMap<>();
     private static final long RECENT_ATTACK_TICKS = 10;
+    private static final long MESSAGE_COOLDOWN_MILLIS = 1000L;
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onAttackEntity(AttackEntityEvent event) {
@@ -118,19 +121,7 @@ public class PvpDamageHandler {
             PvpUtil.tellWarning(attacker, "Your pending §c/pvp off §7was cancelled because you attacked another player.");
         }
 
-        boolean blockedByPair =
-                data.hasBlocked(attackerId, victimId) ||
-                        data.hasBlocked(victimId, attackerId);
-
-        boolean blockedByToggle;
-
-        if (Config.oneSidedToggle) {
-            blockedByToggle = data.isPvpOff(victimId);
-        } else {
-            blockedByToggle = data.isPvpOff(attackerId) || data.isPvpOff(victimId);
-        }
-
-        return blockedByPair || blockedByToggle;
+        return !PvpRules.canAttack(data, attackerId, victimId);
     }
 
     private static void rememberAttack(ServerPlayer attacker, ServerPlayer victim) {
@@ -164,9 +155,22 @@ public class PvpDamageHandler {
     }
 
     private static void notifyBlocked(ServerPlayer player, String message) {
-        if (Config.sendActionMessages) {
-            PvpUtil.tellError(player, message);
-        }
+        if (!Config.sendActionMessages) return;
+
+        long now = System.currentTimeMillis();
+        long lastMessage = LAST_BLOCK_MESSAGE.getOrDefault(player.getUUID(), 0L);
+        if (now - lastMessage < MESSAGE_COOLDOWN_MILLIS) return;
+
+        LAST_BLOCK_MESSAGE.put(player.getUUID(), now);
+        PvpUtil.tellError(player, message);
+    }
+
+    @SubscribeEvent
+    public void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        UUID playerId = event.getEntity().getUUID();
+        RECENT_ATTACKERS.remove(playerId);
+        RECENT_ATTACKERS.entrySet().removeIf(entry -> entry.getValue().attackerId().equals(playerId));
+        LAST_BLOCK_MESSAGE.remove(playerId);
     }
 
     private record RecentAttack(UUID attackerId, long tick) {

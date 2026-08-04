@@ -25,14 +25,19 @@ public class PvpIconSync {
     }
 
     public static void syncForViewer(ServerPlayer viewer) {
+        PvpData data = PvpStorage.get(viewer.server);
         for (ServerPlayer target : viewer.server.getPlayerList().getPlayers()) {
             if (viewer == target) continue;
-            syncSingle(viewer, target);
+            syncSingle(viewer, target, data);
         }
     }
 
     public static void syncSingle(ServerPlayer viewer, ServerPlayer target) {
         PvpData data = PvpStorage.get(viewer.server);
+        syncSingle(viewer, target, data);
+    }
+
+    private static void syncSingle(ServerPlayer viewer, ServerPlayer target, PvpData data) {
 
         boolean canAttack = PvpRules.canAttack(
                 data,
@@ -47,8 +52,13 @@ public class PvpIconSync {
     }
 
     public static void syncAll(ServerPlayer source) {
+        PvpData data = PvpStorage.get(source.server);
         for (ServerPlayer viewer : source.server.getPlayerList().getPlayers()) {
-            syncForViewer(viewer);
+            for (ServerPlayer target : source.server.getPlayerList().getPlayers()) {
+                if (viewer != target) {
+                    syncSingle(viewer, target, data);
+                }
+            }
         }
     }
 }

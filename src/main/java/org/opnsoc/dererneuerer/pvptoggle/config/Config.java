@@ -1,13 +1,9 @@
 package org.opnsoc.dererneuerer.pvptoggle.config;
 
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
-import org.opnsoc.dererneuerer.pvptoggle.Pvptoggle;
 
-@EventBusSubscriber(modid = Pvptoggle.MODID)
-public class Config {
+public final class Config {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     private static final ModConfigSpec.BooleanValue ONE_SIDED_TOGGLE = BUILDER
@@ -36,15 +32,22 @@ public class Config {
 
     public static final ModConfigSpec SPEC = BUILDER.build();
 
-    public static boolean oneSidedToggle;
-    public static int takeEffectTimeMinutes;
-    public static boolean cancelPendingOffOnAttack;
-    public static boolean sendActionMessages;
-    public static boolean blockKnockback;
-    public static boolean blockPlayerPushing;
+    public static boolean oneSidedToggle = false;
+    public static int takeEffectTimeMinutes = 10;
+    public static boolean cancelPendingOffOnAttack = true;
+    public static boolean sendActionMessages = false;
+    public static boolean blockKnockback = true;
+    public static boolean blockPlayerPushing = true;
 
-    @SubscribeEvent
-    static void onLoad(final ModConfigEvent event) {
+    public static void onLoad(ModConfigEvent.Loading event) {
+        if (event.getConfig().getSpec() == SPEC) bake();
+    }
+
+    public static void onReload(ModConfigEvent.Reloading event) {
+        if (event.getConfig().getSpec() == SPEC) bake();
+    }
+
+    private static void bake() {
         oneSidedToggle = ONE_SIDED_TOGGLE.get();
         takeEffectTimeMinutes = TAKE_EFFECT_TIME_MINUTES.get();
         cancelPendingOffOnAttack = CANCEL_PENDING_OFF_ON_ATTACK.get();

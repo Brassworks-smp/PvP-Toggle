@@ -7,59 +7,100 @@ import net.minecraft.world.level.storage.LevelResource;
 import org.opnsoc.dererneuerer.pvptoggle.Pvptoggle;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
-public class PvpStorage {
+public final class PvpStorage {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static PvpData data = new PvpData();
+    private static MinecraftServer loadedServer;
 
-    public static PvpData get(MinecraftServer server) {
-        load(server);
-
+    public static synchronized PvpData get(MinecraftServer server) {
+        ensureLoaded(server);
         if (data.activateExpiredPending()) {
-            save(server);
+            saveLoaded();
         }
-
         return data;
     }
 
-    public static boolean activateExpiredPending(MinecraftServer server) {
+    public static synchronized boolean activateExpiredPending(MinecraftServer server) {
+        ensureLoaded(server);
         if (!data.activateExpiredPending()) {
             return false;
         }
-
-        save(server);
+        saveLoaded();
         return true;
     }
 
-    public static void load(MinecraftServer server) {
-        Path path = file(server);
+    public static synchronized void load(MinecraftServer server) {
+        if (loadedServer != null && loadedServer != server) {
+            saveLoaded();
+        }
 
+        loadedServer = server;
+        Path path = file(server);
         if (!Files.exists(path)) {
             data = new PvpData();
             return;
         }
 
         try {
-            PvpData loaded = GSON.fromJson(Files.readString(path), PvpData.class);
+            PvpData loaded = GSON.fromJson(Files.readString(path, StandardCharsets.UTF_8), PvpData.class);
             data = loaded == null ? new PvpData() : loaded;
             data.fixNulls();
         } catch (Exception exception) {
-            Pvptoggle.LOGGER.error("Could not load PvP toggle data", exception);
+            Pvptoggle.LOGGER.error("Could not load PvP toggle data from {}", path, exception);
             data = new PvpData();
         }
     }
 
-    public static void save(MinecraftServer server) {
+    public static synchronized void save(MinecraftServer server) {
+        ensureLoaded(server);
+        saveLoaded();
+    }
+
+    public static synchronized void unload(MinecraftServer server) {
+        if (loadedServer != server) {
+            return;
+        }
+        saveLoaded();
+        loadedServer = null;
+        data = new PvpData();
+    }
+
+    private static void ensureLoaded(MinecraftServer server) {
+        if (loadedServer != server) {
+            load(server);
+        }
+    }
+
+    private static void saveLoaded() {
+        if (loadedServer == null) {
+            return;
+        }
+
+        Path target = file(loadedServer);
+        Path temporary = target.resolveSibling(target.getFileName() + ".tmp");
+
         try {
-            Files.writeString(file(server), GSON.toJson(data));
+            Files.writeString(temporary, GSON.toJson(data), StandardCharsets.UTF_8);
+            try {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (AtomicMoveNotSupportedException exception) {
+                Files.move(temporary, target, StandardCopyOption.REPLACE_EXISTING);
+            }
         } catch (IOException exception) {
-            Pvptoggle.LOGGER.error("Could not save PvP toggle data", exception);
+            Pvptoggle.LOGGER.error("Could not save PvP toggle data to {}", target, exception);
         }
     }
 
     private static Path file(MinecraftServer server) {
         return server.getWorldPath(LevelResource.ROOT).resolve("pvptoggle-data.json");
+    }
+
+    private PvpStorage() {
     }
 }

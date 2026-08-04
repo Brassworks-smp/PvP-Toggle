@@ -11,8 +11,7 @@ import org.opnsoc.dererneuerer.pvptoggle.config.Config;
 import org.opnsoc.dererneuerer.pvptoggle.data.PvpData;
 import org.opnsoc.dererneuerer.pvptoggle.data.PvpStorage;
 
-public class PvpPlayerHandler {
-
+public final class PvpPlayerHandler {
     private static final String PVP_OFF_TEAM = "pvp_off_collision";
 
     @SubscribeEvent
@@ -31,35 +30,46 @@ public class PvpPlayerHandler {
     }
 
     public static void updateCollision(Entity entity) {
-        if (!(entity instanceof ServerPlayer player)) return;
-
-        Scoreboard scoreboard = player.serverLevel().getScoreboard();
-
-        PlayerTeam team = scoreboard.getPlayerTeam(PVP_OFF_TEAM);
-
-        if (team == null) {
-            team = scoreboard.addPlayerTeam(PVP_OFF_TEAM);
-            team.setCollisionRule(Team.CollisionRule.NEVER);
-            team.setSeeFriendlyInvisibles(false);
-            team.setAllowFriendlyFire(false);
+        if (!(entity instanceof ServerPlayer player)) {
+            return;
         }
 
-        PvpData data = PvpStorage.get(player.getServer());
+        Scoreboard scoreboard = player.serverLevel().getScoreboard();
+        PlayerTeam pvpTeam = scoreboard.getPlayerTeam(PVP_OFF_TEAM);
+        if (pvpTeam == null) {
+            pvpTeam = scoreboard.addPlayerTeam(PVP_OFF_TEAM);
+            pvpTeam.setCollisionRule(Team.CollisionRule.NEVER);
+            pvpTeam.setSeeFriendlyInvisibles(false);
+            pvpTeam.setAllowFriendlyFire(false);
+        }
 
-        boolean shouldBlockPushing =
-                Config.blockPlayerPushing &&
-                        data.isPvpOff(player.getUUID());
-
+        PvpData data = PvpStorage.get(player.server);
         String playerName = player.getScoreboardName();
+        PlayerTeam currentTeam = scoreboard.getPlayersTeam(playerName);
+        boolean shouldBlockPushing = Config.blockPlayerPushing && data.isPvpOff(player.getUUID());
 
         if (shouldBlockPushing) {
-            scoreboard.addPlayerToTeam(playerName, team);
-        } else {
-            PlayerTeam currentTeam = scoreboard.getPlayersTeam(playerName);
-
-            if (currentTeam == team) {
-                scoreboard.removePlayerFromTeam(playerName, team);
+            if (currentTeam != null && currentTeam != pvpTeam) {
+                data.rememberPreviousTeam(player.getUUID(), currentTeam.getName());
             }
+            if (currentTeam != pvpTeam) {
+                scoreboard.addPlayerToTeam(playerName, pvpTeam);
+                PvpStorage.save(player.server);
+            }
+            return;
+        }
+
+        if (currentTeam == pvpTeam) {
+            scoreboard.removePlayerFromTeam(playerName, pvpTeam);
+        }
+
+        String previousTeamName = data.takePreviousTeam(player.getUUID());
+        if (previousTeamName != null) {
+            PlayerTeam previousTeam = scoreboard.getPlayerTeam(previousTeamName);
+            if (previousTeam != null) {
+                scoreboard.addPlayerToTeam(playerName, previousTeam);
+            }
+            PvpStorage.save(player.server);
         }
     }
 }

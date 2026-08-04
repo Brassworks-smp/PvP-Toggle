@@ -1,33 +1,36 @@
 package org.opnsoc.dererneuerer.pvptoggle.data;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-// ... existing code ...
 public class PvpData {
     public Set<UUID> pvpOff = new HashSet<>();
     public Map<UUID, Long> pendingOffUntil = new HashMap<>();
     public Map<UUID, Set<UUID>> blockedPlayers = new HashMap<>();
     public Map<UUID, Map<UUID, Long>> pendingBlockedPlayers = new HashMap<>();
+    public Map<UUID, String> previousTeams = new HashMap<>();
 
     public void fixNulls() {
         if (pvpOff == null) pvpOff = new HashSet<>();
         if (pendingOffUntil == null) pendingOffUntil = new HashMap<>();
         if (blockedPlayers == null) blockedPlayers = new HashMap<>();
         if (pendingBlockedPlayers == null) pendingBlockedPlayers = new HashMap<>();
+        if (previousTeams == null) previousTeams = new HashMap<>();
     }
 
     public boolean isPvpOff(UUID playerId) {
-        activateExpiredPending();
         return pvpOff.contains(playerId);
     }
 
     public boolean isPending(UUID playerId) {
-        activateExpiredPending();
         return pendingOffUntil.containsKey(playerId);
     }
 
     public long pendingUntil(UUID playerId) {
-        activateExpiredPending();
         return pendingOffUntil.getOrDefault(playerId, 0L);
     }
 
@@ -93,19 +96,16 @@ public class PvpData {
     }
 
     public boolean hasBlocked(UUID owner, UUID target) {
-        activateExpiredPending();
         return blockedPlayers.getOrDefault(owner, Set.of()).contains(target);
     }
 
     public boolean hasPendingBlock(UUID owner, UUID target) {
-        activateExpiredPending();
         return pendingBlockedPlayers
                 .getOrDefault(owner, Map.of())
                 .containsKey(target);
     }
 
     public long pendingBlockUntil(UUID owner, UUID target) {
-        activateExpiredPending();
         return pendingBlockedPlayers
                 .getOrDefault(owner, Map.of())
                 .getOrDefault(target, 0L);
@@ -117,6 +117,16 @@ public class PvpData {
 
     public int pendingBlockedCount(UUID owner) {
         return pendingBlockedPlayers.getOrDefault(owner, Map.of()).size();
+    }
+
+    public void rememberPreviousTeam(UUID playerId, String teamName) {
+        if (teamName != null && !teamName.isBlank()) {
+            previousTeams.putIfAbsent(playerId, teamName);
+        }
+    }
+
+    public String takePreviousTeam(UUID playerId) {
+        return previousTeams.remove(playerId);
     }
 
     public boolean activateExpiredPending() {
