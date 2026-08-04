@@ -30,15 +30,9 @@ The mod is designed for Minecraft 1.21.1 with NeoForge. All core functionality i
 
 Run `/pvp menu` to open the optional BrassUI management screen.
 
-The menu provides:
+The menu:
 
-- A compact desktop-style window.
-- Live PvP status and pending-protection timer updates.
-- A live online-player list that reacts to joins, leaves, and state changes.
-- Search and scrolling without replacing or reopening the entire screen.
-- Player heads with names, PvP relationships, and available actions on hover.
-- Direct controls for enabling PvP, disabling PvP, allowing players, and blocking players.
-- Green highlighting for allowed players and red highlighting for blocked or pending states.
+![UI Preview](https://cdn.modrinth.com/data/cached_images/1857a51e9235aa1a07c808484edf32f48230f107.png)
 
 For the UI a compatible KotlinForForge installation are required only on clients that want to use this menu. If they are missing, `/pvp menu` displays an availability message while every regular PvP command continues to work.
 
@@ -92,7 +86,7 @@ PvP Toggle creates a server-side configuration for controlling protection behavi
 2. Place PvP Toggle in the server's `mods` directory.
 3. Start the server once to generate the configuration.
 
-BrassUI and KotlinForForge are not required on the server.
+KotlinForForge is not required on the server.
 
 ### Client
 
@@ -122,5 +116,4 @@ PvP Toggle is licensed under the [MIT License](LICENSE). You may use, modify, an
 
 - [PvP Toggle on GitHub](https://github.com/Brassworks-smp/PvP-Toggle)
 - [Brassworks SMP](https://brassworks.opnsoc.org/)
-- [BrassUI documentation](https://brassworks-smp.github.io/BrassUi/)
 - [Simple Voice Chat on Modrinth](https://modrinth.com/plugin/simple-voice-chat)
