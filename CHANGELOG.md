@@ -1,7 +1,6 @@
 ### Added
 
 * Optional BrassUI-based PvP management menu (Requires KotlinForForge, without the UI will not work)
-* Servers accept players without the BrassUI menu
 * Legacy PvP Toggle clients retain their player icons
 
 ### Changed

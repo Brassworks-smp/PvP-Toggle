@@ -46,13 +46,6 @@ base {
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
-configurations {
-    brassUiEmbed {
-        canBeConsumed = false
-        canBeResolved = true
-    }
-}
-
 configurations.configureEach {
     exclude group: 'curse.maven', module: 'kotlin-for-forge-351264'
 }
@@ -102,7 +95,6 @@ dependencies {
     def universalCraft = "gg.essential:universalcraft-1.21-neoforge:${universalCraftVersion}"
 
     compileOnly(brassUi) { transitive = false }
-    brassUiEmbed(brassUi) { transitive = false }
 
     compileOnly(elementa) { transitive = false }
     compileOnly(universalCraft) { transitive = false }
@@ -117,20 +109,6 @@ dependencies {
 }
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
-
-tasks.named('jar') {
-    from({ configurations.brassUiEmbed.collect { zipTree(it) } }) {
-        include 'net/swzo/brass/ui/**'
-        include 'assets/brassui/**'
-        include 'LICENSE*'
-        exclude 'net/swzo/brass/ui/neoforge/**'
-        exclude 'net/swzo/brass/ui/demo/**'
-    }
-    from({ configurations.brassUiEmbed.collect { zipTree(it) } }) {
-        include 'net/swzo/brass/ui/neoforge/NeoForgePlatform*'
-    }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
     def replaceProperties = [
